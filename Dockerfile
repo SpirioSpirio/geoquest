@@ -1,6 +1,12 @@
 # Use an official Node.js 22 base image
 FROM node:22
 
+# Update packages
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
