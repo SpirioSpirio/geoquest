@@ -7,6 +7,9 @@ export default defineConfig({
         target: 'es2022',
         sourcemap: false
     },
+    server: {
+      allowedHosts: ['geoquest.spirio.fr']
+    },
     resolve: {
         alias: {
             crypto: 'node:crypto'
