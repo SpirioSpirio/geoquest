@@ -1,3 +1,9 @@
+## Instances
+
+List of instances where you can use this software:
+* [https://geoquest.gg](https://geoquest.gg)
+* [https://geoquest.spirio.fr](https://geoquest.spirio.fr)
+
 ## Developing
 
 Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
@@ -22,6 +28,24 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
+## Docker
+
+### To build and run from source
+```bash
+git clone https://github.com/woutdp/geoquest.git
+cd geoquest
+docker build -t geoquest:latest .
+docker run -p 3000:3000 localhost/geoquest:latest
+# then browse to http://localhost:3000
+```
+
+### To run from an already built version
+
+```bash
+docker run -p 3000:3000 docker.io/spiriospirio/geoquest
+# then browse to http://localhost:3000
+```
+
 ## Contributing
 
 The code at the moment is still a bit messy, especially the code for handling different 'game modes'. Feel free to refactor, fix or add features.
@@ -33,3 +57,4 @@ When adding a new language, add the corresponding language identifier in `index.
 is to add the translation files in a folder with the same identifier. You can base model these according to the structure in the english files
 
 If you want to add maps, feel free to do so, but be aware that we're almost hitting the storage limit of Cloudflare Pages so it might not be possible to do so.
+
