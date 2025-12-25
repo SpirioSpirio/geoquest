@@ -1,5 +1,5 @@
 # Use an official Node.js 22 base image
-FROM node:22
+FROM node:25
 
 # Update packages
 RUN apt-get update && \
@@ -29,6 +29,7 @@ COPY tsconfig.json .svelte-kit/tsconfig.json
 RUN if [ ! -f .svelte-kit/tsconfig.json ]; then echo ".svelte-kit/tsconfig.json not found"; exit 1; fi
 
 # Build the production version of the application
+ENV NODE_OPTIONS=--max-old-space-size=8000
 RUN npm run build
 
 # Expose the port on which the application will listen
