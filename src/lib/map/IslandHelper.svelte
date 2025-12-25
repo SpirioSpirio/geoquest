@@ -1,13 +1,13 @@
 <script lang="ts">
     import * as turf from '@turf/turf'
 
-    import {countryColors} from '$lib/store'
+    import {countryColors, greyOutFoundFeatures} from '$lib/store'
     import {antimeridian, buffer, getCountryColor} from '$lib/utils'
 
     export let data
     export let foundFeatures
     export let path
-    export let unfoundFeatures
+    export let activeFeatures
     export let clickCountryHandler
     export let countryFocusedHandler
     export let strokeWidth
@@ -17,7 +17,8 @@
     let topojson = data[1]
 
     $: found = foundFeatures.includes(topojson)
-    $: disabled = !unfoundFeatures.includes(topojson)
+    $: disabled = !activeFeatures.includes(topojson)
+    $: isGreyedOut = (found && $greyOutFoundFeatures) || disabled
     $: color = getCountryColor(feature, $countryColors)
 </script>
 
@@ -28,8 +29,8 @@
     on:click={() => clickCountryHandler(topojson)}
     style="stroke-width: {strokeWidth}px"
     class="
-        stroke-white 
-        {found || disabled
+        stroke-white
+        {isGreyedOut
         ? 'fill-transparent opacity-20'
         : `
             cursor-pointer

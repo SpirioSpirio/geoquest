@@ -8,7 +8,7 @@
     import {loadMap} from '$lib/map'
     import Map from '$lib/map/Map.svelte'
     import {successSound} from '$lib/sounds'
-    import {chosenMap, clientX, clientY, day, geojson, geometries, loadedMap, mousePos, save, showDebug} from '$lib/store'
+    import {chosenMap, clientX, clientY, day, geojson, geometries, loadedMap, mousePos, save, showDebug, greyOutFoundFeatures} from '$lib/store'
     import DebugInterface from '$lib/ui/DebugInterface.svelte'
     import LoadingScreen from '$lib/ui/LoadingScreen.svelte'
     import MouseTooltip from '$lib/ui/MouseTooltip.svelte'
@@ -28,9 +28,9 @@
     let questionFeature
     let lastFocusedCountry
     let focusedCountry
-    let foundFeatures = []
-    let unfoundFeatures = []
-    let toFind = []
+    let foundFeatures = [] // already found by user
+    let activeFeatures = [] // colored on the map, i.e. not greyed out
+    let toFind = [] // remaining countries to find
     let originalToFind = []
     let correctCountries = []
     let streak = 0
@@ -71,8 +71,8 @@
         foundFeatures = []
         correctCountries = []
 
-        if (gameConfiguration.possibleCountries === 'all') unfoundFeatures = $geometries
-        else unfoundFeatures = toFind
+        if (gameConfiguration.possibleCountries === 'all') activeFeatures = $geometries
+        else activeFeatures = toFind
 
         clearInterval(intervalId)
         startTimeMs = Date.now()
@@ -108,8 +108,8 @@
         if (configuration?.mode === 'dailyQuest') {
             const progress = $save.dailyQuestProgress.progress
 
-            if (gameConfiguration.possibleCountries === 'all') unfoundFeatures = $geometries
-            else unfoundFeatures = toFind
+            if (gameConfiguration.possibleCountries === 'all') activeFeatures = $geometries
+            else activeFeatures = toFind
 
             const alreadyFound = _(progress)
                 .filter(arr => configuration.countries.includes(arr.slice(-1)[0]))
@@ -158,7 +158,7 @@
             } else {
                 clearInterval(intervalId)
 
-                unfoundFeatures = []
+                activeFeatures = []
                 showMenu = true
                 showWinScreen = true
             }
@@ -179,8 +179,16 @@
     }
 
     function clickCountryHandler(feature) {
-        if (foundFeatures.includes(feature)) return ALREADY_GUESSED
-        if (!unfoundFeatures.includes(feature)) return ALREADY_GUESSED
+        if (foundFeatures.includes(feature)) {
+            /* this is a harder game-mode where countries _aren't_ greyed out
+             after they've been found. */
+            if (!$greyOutFoundFeatures) {
+                ui.triggerAlreadyGuessed()
+                mistakes += 1
+            }
+            return ALREADY_GUESSED
+        }
+        if (!activeFeatures.includes(feature)) return ALREADY_GUESSED
 
         if (questionFeature?.properties?.name === feature.properties.name) {
             successSound.play()
@@ -188,8 +196,12 @@
             if (gameConfiguration.mode === 'dailyQuest') logGuess(feature.properties.name)
 
             foundFeatures = [...foundFeatures, feature]
-            unfoundFeatures = _.filter(unfoundFeatures, e => e.properties.name !== feature.properties.name)
             toFind = _.filter(toFind, e => e.properties.name !== feature.properties.name)
+
+            /* remove country from 'clickable' countries, depending on setting */
+            if ($greyOutFoundFeatures) {
+                activeFeatures = _.filter(activeFeatures, e => e.properties.name !== feature.properties.name)
+            }
 
             pickFeature()
 
@@ -214,7 +226,7 @@
                 showMenu = true
                 showWinScreen = true
                 focusedCountry = undefined
-                unfoundFeatures = []
+                activeFeatures = []
                 if (mistakes === 0 && gameConfiguration.mode === 'dailyQuest') achieveAchievement('daily-challenge')
             }
 
@@ -285,7 +297,7 @@
 <svelte:window on:keypress={handleKeypress} on:mousemove={handleMousemove} bind:innerWidth={$clientX} bind:innerHeight={$clientY} />
 
 {#if dev}
-    <DebugInterface {mistakesThisGuess} {toFind} {unfoundFeatures} {lastFocusedCountry} />
+    <DebugInterface {mistakesThisGuess} {toFind} {activeFeatures} {lastFocusedCountry} />
 {/if}
 
 <UI
@@ -309,11 +321,11 @@
 />
 
 {#if $loadedMap && interfaceLoaded}
-    <Map bind:this={map} {clickCountryHandler} {countryFocusedHandler} {foundFeatures} {unfoundFeatures} {toFind} />
+    <Map bind:this={map} {clickCountryHandler} {countryFocusedHandler} {foundFeatures} {activeFeatures} {toFind} />
 {/if}
 
 {#if showLoadingScreen}
     <LoadingScreen />
 {/if}
 
-<MouseTooltip {focusedCountry} {unfoundFeatures} />
+<MouseTooltip {focusedCountry} {activeFeatures} />
